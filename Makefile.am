@@ -11,6 +11,11 @@ SEDUTIL_COMMON_CODE = Common/log.h \
 	Common/DtaDev.h Common/DtaDevEnterprise.h \
 	Common/DtaDevGeneric.cpp Common/DtaDevOpal1.cpp \
 	Common/DtaDevGeneric.h Common/DtaDevOpal1.h \
+	Common/DtaDevOpalite.cpp Common/DtaDevOpalite.h \
+	Common/DtaDevPyrite1.cpp Common/DtaDevPyrite1.h \
+	Common/DtaDevPyrite2.cpp Common/DtaDevPyrite2.h \
+	Common/DtaDevRuby1.cpp Common/DtaDevRuby1.h \
+	Common/DtaDevOpal1.cpp Common/DtaDevOpal1.h \
 	Common/DtaDevOpal2.cpp Common/DtaDevOpal.cpp \
 	Common/DtaDevOpal2.h Common/DtaDevOpal.h \
 	Common/DtaDiskType.cpp Common/DtaHashPwd.cpp \
@@ -24,12 +29,12 @@ SEDUTIL_COMMON_CODE = Common/log.h \
 	Common/pbkdf2/pbkdf2.c Common/pbkdf2/sha1.c \
 	Common/pbkdf2/pbkdf2.h Common/pbkdf2/sha1.h \
 	Common/pbkdf2/bitops.h Common/pbkdf2/blockwise.h \
-	Common/pbkdf2/handy.h Common/pbkdf2/tassert.h 
+	Common/pbkdf2/handy.h Common/pbkdf2/tassert.h
 SEDUTIL_LINUX_CODE = \
 	linux/Version.h linux/os.h linux/DtaDevLinuxDrive.h \
 	linux/DtaDevLinuxNvme.cpp linux/DtaDevLinuxSata.cpp \
 	linux/DtaDevLinuxNvme.h linux/DtaDevLinuxSata.h \
-	linux/DtaDevOS.cpp linux/DtaDevOS.h 
+	linux/DtaDevOS.cpp linux/DtaDevOS.h
 sbin_PROGRAMS = sedutil-cli linuxpba
 sedutil_cli_SOURCES = Common/sedutil.cpp Common/DtaOptions.cpp \
 	Common/DtaOptions.h \
