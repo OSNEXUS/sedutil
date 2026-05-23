@@ -256,18 +256,6 @@ void DtaDevLinuxSata::identify(OPAL_DiskInfo& disk_info)
     //    LOG(D4) << "sense after ";
     //    IFLOG(D4) hexDump(sense, sizeof (sense));
 
-    ifstream kopts;
-    kopts.open("/sys/module/libata/parameters/allow_tpm", ios::in);
-    if (!kopts) {
-	LOG(W) << "Unable to verify Kernel flag libata.allow_tpm ";
-    } 
-    else {
-        if('1' !=  kopts.get()) {
-            LOG(E) << "The Kernel flag libata.allow_tpm is not set correctly";
-               LOG(E) << "Please see the readme note about setting the libata.allow_tpm ";
-        }
-        kopts.close();
-    }
 
     if (!(memcmp(nullz.data(), buffer, 512))) {
         disk_info.devType = DEVICE_TYPE_OTHER;
