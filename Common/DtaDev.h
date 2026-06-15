@@ -77,6 +77,12 @@ public:
 	/** displays the information returned by the Discovery 0 reply */
 	virtual void puke();
 
+	/** Determine whether the drive has been "claimed" -- i.e. the owner (SID)
+	 * credential has been changed from the factory MSID. Sets claimed = 1 when
+	 * owned (SID != MSID) or 0 when at factory default (MSID still works).
+	 * Returns 0 if the state was determined, non-zero if it could not be. */
+	virtual uint8_t isOwned(uint8_t & claimed);
+
 	/** Decode the Discovery 0 response. Scans the D0 response and creates a structure
 	 * that can be queried later as required.This code also takes care of
 	 * the endianess conversions either via a bitswap in the structure or executing

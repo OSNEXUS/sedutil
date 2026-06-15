@@ -340,6 +340,13 @@ void DtaDev::puke()
 		cout << "    Locked = " << (disk_info.Locking_locked ? "Y, " : "N, ")
 			<< "LockingEnabled = " << (disk_info.Locking_lockingEnabled ? "Y, " : "N, ")
 			<< "LockingSupported = " << (disk_info.Locking_lockingSupported ? "Y, " : "N, ");
+		{
+			uint8_t claimed = 0;
+			if (isOwned(claimed) == 0)
+				cout << "Claimed = " << (claimed ? "Y, " : "N, ");
+			else
+				cout << "Claimed = ?, ";
+		}
 		cout << "MBRDone = " << (disk_info.Locking_MBRDone ? "Y, " : "N, ")
 			<< "MBREnabled = " << (disk_info.Locking_MBREnabled ? "Y, " : "N, ")
 			<< "MBRAbsent = " << (disk_info.Locking_MBRAbsent ? "Y, " : "N, ")
@@ -535,4 +542,16 @@ uint8_t DtaDev::stack_reset(uint32_t ext_com_id) {
 	}
 	LOG(E) << "DtaDev::stack_reset() Reset poll timed out";
 	return -3;
+}
+
+uint8_t DtaDev::isOwned(uint8_t & claimed)
+{
+	// Opal-family SSCs report Block SID Authentication (0x0402), which states
+	// directly whether the SID still equals the factory MSID -- no session needed.
+	if (disk_info.BlockSIDAuthentication) {
+		claimed = disk_info.BlockSIDAuthentication_SIDValueState ? 1 : 0;
+		return 0;
+	}
+	// No discovery indicator (e.g. TCG Enterprise SSC); base cannot determine.
+	return DTAERROR_NO_METHOD_STATUS;
 }

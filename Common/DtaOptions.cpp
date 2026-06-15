@@ -36,7 +36,10 @@ void usage()
     printf("                                Scans the devices on the system \n");
     printf("                                identifying Opal compliant devices \n");
     printf("--query <device>\n");
-    printf("                                Display the Discovery 0 response of a device\n");
+    printf("                                Display the Discovery 0 response of a device.\n");
+    printf("                                The Locking function shows 'Claimed = Y' when the owner (SID)\n");
+    printf("                                credential differs from the factory MSID (drive has been set\n");
+    printf("                                up/owned), 'N' when it is still the factory MSID, '?' if undetermined.\n");
     printf("--isValidSED <device>\n");
     printf("                                Verify whether the given device is SED or not\n");
     printf("--listLockingRanges <password> <device>\n");

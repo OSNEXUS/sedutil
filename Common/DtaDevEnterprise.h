@@ -186,6 +186,8 @@ public:
 	uint8_t setup_SUM(uint8_t lockingrange, uint64_t start, uint64_t length, char *Admin1Password, char * password);
         /** Displays the identify and discovery 0 information */
 	void puke();
+	/** Probe whether the SID owner credential still equals the factory MSID. */
+	uint8_t isOwned(uint8_t & claimed);
          /** Dumps an object for diagnostic purposes
          * @param sp index into the OPALUID table for the SP the object is in
          * @param auth the authority to use for the dump

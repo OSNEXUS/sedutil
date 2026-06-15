@@ -1255,6 +1255,37 @@ uint8_t DtaDevEnterprise::getDefaultPassword()
 	LOG(D1) << "Exiting getDefaultPassword()";
 	return 0;
 }
+
+uint8_t DtaDevEnterprise::isOwned(uint8_t & claimed)
+{
+	uint8_t lastRC;
+	LOG(D1) << "Entering DtaDevEnterprise::isOwned()";
+	// TCG Enterprise SSC does not report Block SID Authentication, so probe:
+	// does the factory MSID still authenticate as the SID owner?
+	if ((lastRC = getDefaultPassword()) != 0) {
+		LOG(D1) << "isOwned: unable to read MSID, state undetermined";
+		return lastRC;
+	}
+	string msid = response.getString(5);
+	std::vector<uint8_t> sid;
+	set8(sid, OPALUID[OPAL_UID::OPAL_SID_UID]);
+	session = new DtaSession(this);
+	if (session == NULL)
+		return DTAERROR_OBJECT_CREATE_FAILED;
+	session->dontHashPwd();              // MSID is the raw credential
+	session->quietAuthFailures();        // an owned drive is expected to reject it
+	lastRC = session->start(OPAL_UID::OPAL_ADMINSP_UID, (char *)msid.c_str(), sid);
+	delete session;
+	if (lastRC == 0) {                   // MSID authenticates -> still factory default
+		claimed = 0;
+		return 0;
+	}
+	if (lastRC == DTAERROR_AUTH_FAILED || lastRC == OPALSTATUSCODE::NOT_AUTHORIZED) {
+		claimed = 1;                     // MSID rejected -> owner credential changed
+		return 0;
+	}
+	return lastRC;                       // some other error -> undetermined
+}
 uint8_t DtaDevEnterprise::printDefaultPassword()
 {
     const uint8_t rc = getDefaultPassword();
