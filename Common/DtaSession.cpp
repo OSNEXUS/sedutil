@@ -99,6 +99,7 @@ DtaSession::start(OPAL_UID SP, char * HostChallenge, vector<uint8_t> SignAuthori
     LOG(D1) << "Entering DtaSession::startSession ";
 	vector<uint8_t> hash;
 	int settimeout = d->isEprise();
+	int didStackReset = 0;
 	lastRC = 0;
 
 again:
@@ -149,9 +150,26 @@ again:
 			settimeout = 0;
 			goto again;
 		}
+		// Single-session (MaxSessions=1) drives can refuse a new session with
+		// SP_BUSY / NO_SESSIONS_AVAILABLE when a prior session was not cleanly
+		// closed. The TCG stack reset clears the stuck session so we can
+		// re-establish. Trigger it ONLY for that specific busy condition
+		// (vendor-agnostic), once per start; drives that do not implement the
+		// reset fail it gracefully and the original error propagates unchanged.
+		if (!didStackReset &&
+		    (lastRC == OPALSTATUSCODE::SP_BUSY ||
+		     lastRC == OPALSTATUSCODE::NO_SESSIONS_AVAILABLE)) {
+			didStackReset = 1;
+			LOG(D2) << "Session start busy (rc = " << (int)lastRC << "); applying stack reset";
+			if (d->stack_reset(d->comID() << 16) == 0) {
+				LOG(D2) << "Stack reset successful, retrying session start";
+				goto again;
+			}
+			LOG(E) << "Stack reset failed";
+		}
 		LOG(E) << "Session start failed rc = " << (int)lastRC;
 		return lastRC;
-	}  
+	}
     // call user method SL HSN TSN EL EOD SL 00 00 00 EL
     //   0   1     2     3  4   5   6  7   8
     HSN = SWAP32(response.getUint32(4));
@@ -195,12 +213,18 @@ DtaSession::authenticate(vector<uint8_t> Authority, char * Challenge)
 	cmd->addToken(OPAL_TOKEN::ENDLIST); // ]  (Close Bracket)
 	cmd->complete();
 	if ((lastRC = sendCommand(cmd, response)) != 0) {
-		LOG(E) << "Session Authenticate failed";
+		if (quietAuthFail)
+			LOG(D2) << "Session Authenticate failed";
+		else
+			LOG(E) << "Session Authenticate failed";
 		delete cmd;
 		return lastRC;
 	}
 	if (0 == response.getUint8(1)) {
-		LOG(E) << "Session Authenticate failed (response = false)";
+		if (quietAuthFail)
+			LOG(D2) << "Session Authenticate failed (response = false)";
+		else
+			LOG(E) << "Session Authenticate failed (response = false)";
 		delete cmd;
 		return DTAERROR_AUTH_FAILED;
 	}
@@ -231,7 +255,7 @@ DtaSession::sendCommand(DtaCommand * cmd, DtaResponse & response)
     if ((0 == response.h.cp.outstandingData) &&
         (0 == response.h.cp.minTransfer) &&
         (0 == response.h.cp.length)) {
-        LOG(D1) << "All Response(s) returned – no further data, request parsing error";
+        LOG(D1) << "All Response(s) returned ï¿½ no further data, request parsing error";
 		return DTAERROR_COMMAND_ERROR;
     }
     if ((0 == response.h.cp.length) ||
@@ -277,6 +301,12 @@ DtaSession::expectAbort()
 {
     LOG(D1) << "Entering DtaSession::expectAbort()";
     willAbort = 1;
+}
+
+void
+DtaSession::quietAuthFailures()
+{
+    quietAuthFail = 1;
 }
 
 char *

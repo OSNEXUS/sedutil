@@ -1196,6 +1196,11 @@ uint8_t DtaDevEnterprise::initLSPUsers(char * defaultPassword, char * newPasswor
 			return DTAERROR_OBJECT_CREATE_FAILED;
 		}
 		session->dontHashPwd();
+		// BandMasters beyond those provisioned on the drive won't authenticate;
+		// that is expected and non-fatal (only BandMaster0 matters), so quiet
+		// the per-band authenticate-failure logging.
+		if (i > 0)
+			session->quietAuthFailures();
 		if ((lastRC = session->start(OPAL_UID::ENTERPRISE_LOCKINGSP_UID, defaultPassword, user)) != 0) {
 			delete session;
 			// We only return failure if we fail to set BandMaster0.

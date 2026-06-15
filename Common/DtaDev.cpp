@@ -489,3 +489,50 @@ void DtaDev::puke()
 	if (disk_info.Unknown)
 		cout << "**** " << (uint16_t)disk_info.Unknown << " **** Unknown function codes IGNORED " << std::endl;
 }
+
+uint8_t DtaDev::stack_reset(uint32_t ext_com_id) {
+	uint8_t reset_buffer[MIN_BUFFER_LENGTH + IO_BUFFER_ALIGNMENT];
+	uint8_t response_buf[MIN_BUFFER_LENGTH + IO_BUFFER_ALIGNMENT];
+	uint8_t lastRC;
+	// ComID-management (protocol 0x02) transfers a single 512-byte block per
+	// TCG SIIS / Seagate TCGstorageAPI; sending MIN_BUFFER_LENGTH (2048, 4 blocks)
+	// is rejected by Seagate Enterprise drives ("Reset send ... failed").
+	const uint32_t c_comIdXferLen = 512;
+	LOG(D1) << "Entering DtaDev::stack_reset()";
+
+	memset(reset_buffer, 0, MIN_BUFFER_LENGTH);
+	reset_buffer[0] = (ext_com_id >> 24) & 0xFF;
+	reset_buffer[1] = (ext_com_id >> 16) & 0xFF;
+	reset_buffer[2] = (ext_com_id >> 8) & 0xFF;
+	reset_buffer[3] = (ext_com_id) & 0xFF;
+	reset_buffer[7] = 0x02;
+	if ((lastRC = sendCmd(IF_SEND, 0x02, comID(), reset_buffer, c_comIdXferLen)) != 0) {
+		LOG(E) << "Reset send with ComID " << HEXON(4) << comID() << " failed!" << HEXOFF << std::endl;
+		return lastRC;
+	}
+	for (uint8_t trials=1; trials<=2;trials++) {
+		memset(response_buf, 0, MIN_BUFFER_LENGTH);
+		if ((lastRC = sendCmd(IF_RECV, 0x02, comID(), response_buf, c_comIdXferLen)) != 0) {
+			LOG(D) << "Receive Reset Status Request to device failed " << (uint16_t)lastRC;
+			return -1;
+		}
+		SSCCommResp *resp = (SSCCommResp *)(response_buf);
+		resp->decode();
+		if (resp->type == SSCCommResp::STACK_RESET_PEND_RESP) {
+			LOG(D) << "  DtaDev::stack_reset() Reset is pending. Retry #" << trials;
+			osmsSleep(25);
+		} else if (resp->type == SSCCommResp::STACK_RESET_RESP) {
+			if (resp->structure.reset.status != SSCCommResp::Response::Reset::SUCCESS) {
+				LOG(E) << "Stack reset failed";
+				return SWAP32(resp->structure.reset.status);
+			}
+			LOG(D) << "DtaDev::stack_reset() Stack Reset is successful";
+			return 0;
+		} else {
+			LOG(E) << "DtaDev::stack_reset() Unrecognized response received";
+			return -2;
+		}
+	}
+	LOG(E) << "DtaDev::stack_reset() Reset poll timed out";
+	return -3;
+}

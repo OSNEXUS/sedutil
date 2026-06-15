@@ -79,6 +79,10 @@ public:
      * to suppress the normal error checking 
      */
     void expectAbort();
+    /** downgrade authenticate-failure logging to debug; used when iterating
+     * over authorities where some are expected to fail (e.g. BandMaster scan)
+     */
+    void quietAuthFailures();
 	/** return the authorization the session has started under */
 	uint8_t authuser();
     /** send a command to the device in this session 
@@ -98,6 +102,7 @@ private:
     uint32_t TSN = 0;   /**< TPer session number */
     uint32_t HSN = 0;  /**< Host session number */
     uint8_t willAbort = 0;   /**< Command is expected to abort */
+    uint8_t quietAuthFail = 0;   /**< downgrade authenticate-failure log to debug */
 	uint8_t hashPwd = 1;  /**< hash the password when authenticating */
     uint8_t SecurityProtocol = 0x01;  /**< The seurity protocol to be used */
 	uint8_t lastRC;  /**< last return code */
