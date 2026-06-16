@@ -276,8 +276,12 @@ DtaSession::sendCommand(DtaCommand * cmd, DtaResponse & response)
 		return DTAERROR_NO_METHOD_STATUS;
     }
     if (OPALSTATUSCODE::SUCCESS != response.getUint8(response.getTokenCount() - 4)) {
-        LOG(E) << "method status code " <<
-                methodStatus(response.getUint8(response.getTokenCount() - 4));
+        if (quietAuthFail)
+            LOG(D2) << "method status code " <<
+                    methodStatus(response.getUint8(response.getTokenCount() - 4));
+        else
+            LOG(E) << "method status code " <<
+                    methodStatus(response.getUint8(response.getTokenCount() - 4));
     }
     return response.getUint8(response.getTokenCount() - 4);
 }

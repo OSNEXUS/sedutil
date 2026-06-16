@@ -1280,11 +1280,17 @@ uint8_t DtaDevEnterprise::isOwned(uint8_t & claimed)
 		claimed = 0;
 		return 0;
 	}
-	if (lastRC == DTAERROR_AUTH_FAILED || lastRC == OPALSTATUSCODE::NOT_AUTHORIZED) {
-		claimed = 1;                     // MSID rejected -> owner credential changed
+	// MSID rejected -> owner credential changed. AUTHORITY_LOCKED_OUT counts too:
+	// a factory-default drive's MSID would authenticate (rc 0), not lock out, so
+	// a locked-out SID authority means the drive is no longer at factory default.
+	// Locked Enterprise drives (e.g. Seagate ST20000) return this.
+	if (lastRC == DTAERROR_AUTH_FAILED ||
+	    lastRC == OPALSTATUSCODE::NOT_AUTHORIZED ||
+	    lastRC == OPALSTATUSCODE::AUTHORITY_LOCKED_OUT) {
+		claimed = 1;
 		return 0;
 	}
-	return lastRC;                       // some other error -> undetermined
+	return lastRC;                       // transport/other error -> undetermined
 }
 uint8_t DtaDevEnterprise::printDefaultPassword()
 {
